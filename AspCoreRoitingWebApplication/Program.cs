@@ -1,3 +1,4 @@
+
 List<Employee> employees = new()
 {
     new(){ Name = "Bobby", Age = 34, Id = 3 },
@@ -7,10 +8,22 @@ List<Employee> employees = new()
 };
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.Configure<RouteOptions>(
+    options => options.ConstraintMap.Add("mypass", typeof(PasswordConstraint)));
+
+
+
 var app = builder.Build();
 
-app.Map("/", () => "Hello World!");
-app.MapGet("/about", () => "About");
+
+
+//app.Map("{controller:length(7):required=home}/{action=index}/{id:int:range(100, 1000)?}",
+//    (string controller, string action, string? id) =>
+//    $"Controller: {controller}\nAction: {action}\nId: {id}"
+//    );
+
+
+app.MapGet("/about/{pass:mypass(12345)}/", () => "About");
 app.MapGet("/empl/{name?}/{age?}", (string name = "", int age = 0) =>
 {
     if (name == "")
@@ -57,4 +70,17 @@ class Employee
     public int Id { set; get; }
     public string Name { get; set; }
     public int Age { get; set; }
+}
+
+class PasswordConstraint : IRouteConstraint
+{
+    string password;
+    public PasswordConstraint(string password)
+    {
+        this.password = password;
+    }
+    public bool Match(HttpContext? httpContext, IRouter? route, string routeKey, RouteValueDictionary values, RouteDirection routeDirection)
+    {
+        return values[routeKey]?.ToString() == password;
+    }
 }
